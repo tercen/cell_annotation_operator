@@ -56,7 +56,7 @@ df_out <- probas %>%
   as_tibble() %>%
   mutate(population = rownames(probas)) %>%
   pivot_longer(names_to = ".ci", values_to = "prob", -population) %>%
-  mutate(.ci = as.integer(.ci) - 1) %>%
+  mutate(.ci = as.integer(.ci) - 1L) %>%
   ctx$addNamespace() 
 
 df_out %>%
