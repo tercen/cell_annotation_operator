@@ -1,50 +1,29 @@
-# Template R operator
-
-The `Template R operator` is a template repository for the creation of R operators in Tercen. An overview of steps for developing an operator are:
-
-1. create a github repo
-2. install tercen_studio
-3. login to tercen_studio
-4. git clone the newly created repo
-5. start developing in R in tercen_studio
-6. add R packages to the repo
-7. push to the github repo
-8. go to tercen and install the operator
-
-More information can be found in the [Tercen developer's guide](https://tercen.github.io/developers_guide/).
-
-Below is the operator README standard structure:
+# Cell Annotation
 
 ##### Description
 
-The `Template R operator` is a template repository for the creation of R operators in Tercen.
+The `cell_annotation_operator` annotates clusters based on a reference table of
+marker vs. cell population correpondence.
 
 ##### Usage
 
 Input projection|.
 ---|---
-`x-axis`        | type, description 
-`y-axis`        | type, description 
-`row`           | type, description 
-`column`        | type, description 
-`colors`        | type, description 
-`labels`        | type, description 
+`y-axis`        | numeric, enrichment score (from the marker_enrichment_operator)
+`row`           | factor, variable (channel, marker) 
+`column`        | factor, group (cluster)
 
 Input parameters|.
 ---|---
-`input_var`        | parameter description
+`annotation_level`        | Annotation level
 
 Output relations|.
 ---|---
-`output_var`        | output relation
-`Operator view`        | view of the Shiny application
-
-##### Details
-
-Details on the computation.
+`population`        | Cell population
+`prob`        | Posterior probability of being part of the population, per column (cluster)
 
 ##### See Also
 
-[template_shiny_operator](https://github.com/tercen/template_shiny_operator)
-, [template_docker_operator](https://github.com/tercen/template_docker_operator)
+[marker_enrichment_operator](https://github.com/tercen/marker_enrichment_operator)
+
 

@@ -1,10 +1,17 @@
 {
-  "name": "Template_R_operator",
-  "description": "Calculate the mathematical average of the data points in a cell.",
-  "tags": ["basic statistics"],
+  "name": "Cell Annotation",
+  "description": "Annotate cell populations based on a marker enrichment score computed for each cluster.",
+  "tags": ["flow cytometry", "annotation"],
   "authors": ["tercen"],
-  "urls": ["https://github.com/tercen/template-R-operator-lite"],
-  "properties": []
+  "urls": ["https://github.com/tercen/cell_annotation_operator"],
+  "properties": [
+    {
+      "kind": "StringProperty",
+      "name": "annotation_level",
+      "defaultValue": "1",
+      "description": "Annotation level to use from the population - marker correspondence table."
+    }
+  ]
 }
 
 
