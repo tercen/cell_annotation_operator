@@ -32,7 +32,7 @@ neg_list <- strsplit(gsub(" ", "", annot$low_markers), "_")
 
 rvals_in <- rvals[rvals %in% unlist(c(pos_list, neg_list))]
 
-if(length(rvals_in) == 0) stop("No markers found in the annotation. Please check the marker names.")
+if(length(rvals_in) == 0) warning("No markers found in the annotation. Please check the marker names.")
 msg <- paste0("The following markers have been found in the annotation: ", paste0(rvals_in, collapse = ", "))
 ctx$log(msg)
 
