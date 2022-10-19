@@ -4,6 +4,9 @@ suppressPackageStartupMessages({
   library(tidyr)
 })
 
+#options("tercen.workflowId" = "75cc2bda2d854b35362e4f45150136b9")
+#options("tercen.stepId"     = "5ae79b70-5195-4578-8439-eaf21b9a250b")
+
 ctx = tercenCtx()
 
 if(length(ctx$rnames) != 1) stop("Only one row factor must be projected.")
@@ -19,10 +22,17 @@ if(any(grepl("Comp|::", rvals))) {
     1
   ))
 }
+### Extract the population table with the documentId
+doc.id.tmp<-as_tibble(ctx$select())
+doc.id<-doc.id.tmp[[grep("documentId" , colnames(doc.id.tmp))]][1]
 
-annot <- read.csv("./default_annotation.csv", header = TRUE)
+annot_tbl<-ctx$client$tableSchemaService$select(doc.id) %>%
+  as_tibble()
 
-annot <- annot %>% filter(level == annotation_level)
+annot_df <- as.data.frame(annot_tbl)
+#annot_df <- read.csv("./default_annotation.csv", header = TRUE)
+
+annot <- annot_df #%>% filter(level == annotation_level)
 pos_list <- strsplit(gsub(" ", "", annot$high_markers), "_")
 neg_list <- strsplit(gsub(" ", "", annot$low_markers), "_")
 
