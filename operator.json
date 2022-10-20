@@ -4,14 +4,7 @@
   "tags": ["flow cytometry", "annotation"],
   "authors": ["tercen"],
   "urls": ["https://github.com/tercen/cell_annotation_operator"],
-  "properties": [
-    {
-      "kind": "StringProperty",
-      "name": "annotation_level",
-      "defaultValue": "1",
-      "description": "Annotation level to use from the population - marker correspondence table."
-    }
-  ]
+  "properties": []
 }
 
 

@@ -11,7 +11,7 @@ ctx = tercenCtx()
 
 if(length(ctx$rnames) != 1) stop("Only one row factor must be projected.")
 
-annotation_level <- ctx$op.value("annotation_level", as.character, "1")
+#annotation_level <- ctx$op.value("annotation_level", as.character, "1")
 
 rvals <- ctx$rselect()[[1]]
 
@@ -33,8 +33,8 @@ annot_df <- as.data.frame(annot_tbl)
 #annot_df <- read.csv("./default_annotation.csv", header = TRUE)
 
 annot <- annot_df #%>% filter(level == annotation_level)
-pos_list <- strsplit(gsub(" ", "", annot$high_markers), "_")
-neg_list <- strsplit(gsub(" ", "", annot$low_markers), "_")
+pos_list <- strsplit(gsub(" ", "", annot$pos_markers), "_")
+neg_list <- strsplit(gsub(" ", "", annot$neg_markers), "_")
 
 # splitted <- strsplit(annot$markers, "(?<=[+-])", perl = TRUE)
 # pos_list <- lapply(splitted, function(x) gsub("[+]", "", x[grep("[+]", x)]))
