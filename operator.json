@@ -4,7 +4,13 @@
   "tags": ["flow cytometry", "annotation"],
   "authors": ["tercen"],
   "urls": ["https://github.com/tercen/cell_annotation_operator"],
-  "properties": []
+  "properties":  [
+    {
+    "kind": "DoubleProperty",
+    "name": "P-value threshold",
+    "defaultValue": 0.05,
+    "description": "P-value threshold"
+  }]
 }
 
 
