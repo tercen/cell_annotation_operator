@@ -11,7 +11,6 @@ ctx = tercenCtx()
 
 if(length(ctx$rnames) != 1) stop("Only one row factor must be projected.")
 
-#annotation_level <- ctx$op.value("annotation_level", as.character, "1")
 pthres <- ctx$op.value('P-value threshold', as.double, 0.05)
 
 rvals <- ctx$rselect()[[1]]
@@ -30,16 +29,9 @@ doc.id<-doc.id.tmp[[grep("documentId" , colnames(doc.id.tmp))]][1]
 annot_tbl<-ctx$client$tableSchemaService$select(doc.id) %>%
   as_tibble()
 
-annot_df <- as.data.frame(annot_tbl)
-#annot_df <- read.csv("./default_annotation.csv", header = TRUE)
-
-annot <- annot_df #%>% filter(level == annotation_level)
+annot <- as.data.frame(annot_tbl)
 pos_list <- strsplit(gsub(" ", "", annot$pos_markers), "_")
 neg_list <- strsplit(gsub(" ", "", annot$neg_markers), "_")
-
-# splitted <- strsplit(annot$markers, "(?<=[+-])", perl = TRUE)
-# pos_list <- lapply(splitted, function(x) gsub("[+]", "", x[grep("[+]", x)]))
-# neg_list <- lapply(splitted, function(x) gsub("[-]", "", x[grep("[-]", x)]))
 
 rvals_in <- rvals[rvals %in% unlist(c(pos_list, neg_list))]
 
@@ -108,8 +100,8 @@ df_out<-merge(prob_out,pval_out)
 join_res <- df_out %>%
   left_join_relation(ctx$crelation, ".ci", ctx$crelation$rids) %>%
   left_join_relation(tbl_pv_out, list(), list()) %>%
-  as_join_operator(ctx$cnames, ctx$cnames)
+  as_join_operator(ctx$cnames, ctx$cnames)%>%
+  save_relation(ctx)
 
-
-df_out %>%
+join_res %>%
   ctx$save()
