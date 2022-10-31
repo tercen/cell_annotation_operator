@@ -15,6 +15,7 @@ pthres <- ctx$op.value('P-value threshold', as.double, 0.05)
 
 rvals <- ctx$rselect()[[1]]
 
+### cleaning marker names
 if(any(grepl("Comp|::", rvals))) {
   rvals <- unlist(lapply(
     strsplit(rvals, ":|,| "),
@@ -39,6 +40,7 @@ if(length(rvals_in) == 0) warning("No markers found in the annotation. Please ch
 msg <- paste0("The following markers have been found in the annotation: ", paste0(rvals_in, collapse = ", "))
 ctx$log(msg)
 
+### Probabilities computation
 mat <- ctx$as.matrix()
 rownames(mat) <- rvals
 
@@ -54,21 +56,21 @@ rownames(p_val) <- annot$population
 colnames(p_val) <- as.character(1:ncol(p_val))
 
 probas <- apply(p_val, 2, function(n) {
-  prob <- round(n / sum(n), 4)
+  prob <- round(1-n / sum(1-n), 4)
   prob
 })
 rownames(probas) <- annot$population
 colnames(probas) <- as.character(1:ncol(probas))
 
-
+### Determination of the more likely population
 apply(t(p_val), 2, function(x) which.max(x))
 tpv<-t(p_val)
 
-table_pv<-cbind(rownames(tpv),"Unknow")
+table_pv<-cbind(rownames(tpv),"Unknown")
 for (cluster in rownames(tpv)){
   
   res<-which( tpv[cluster,] == min(tpv[cluster,]))
-  if (min(tpv[cluster,])[1]<pthres){
+  if (min(tpv[cluster,])[1]<=pthres){
     table_pv[[as.integer(cluster),2]]<-paste(colnames(tpv)[res], collapse = '_')
   }
 }
@@ -82,26 +84,19 @@ pval_out <- p_val %>%
   mutate(.ci = as.integer(.ci) - 1L) %>%
   ctx$addNamespace() 
 
-prob_out <- probas %>% 
+prob_out <- probas %>%
   as_tibble() %>%
   mutate(population = rownames(probas)) %>%
   pivot_longer(names_to = ".ci", values_to = "prob", -population) %>%
   mutate(.ci = as.integer(.ci) - 1L) %>%
   ctx$addNamespace()
 
-tbl_pv_out <- table_pv %>% 
+tbl_pv_out <- table_pv %>%
   as_tibble() %>%
   mutate(.ci = as.integer(.ci) - 1L) %>%
-  ctx$addNamespace() %>%
-  as_relation() 
+  ctx$addNamespace()
 
-df_out<-merge(prob_out,pval_out)
+df_out <- merge(prob_out,pval_out)
 
-join_res <- df_out %>%
-  left_join_relation(ctx$crelation, ".ci", ctx$crelation$rids) %>%
-  left_join_relation(tbl_pv_out, list(), list()) %>%
-  as_join_operator(ctx$cnames, ctx$cnames)%>%
-  save_relation(ctx)
+ctx$save(list(df_out, tbl_pv_out))
 
-join_res %>%
-  ctx$save()
