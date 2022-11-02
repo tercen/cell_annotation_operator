@@ -56,7 +56,7 @@ rownames(p_val) <- annot$population
 colnames(p_val) <- as.character(1:ncol(p_val))
 
 probas <- apply(p_val, 2, function(n) {
-  prob <- round(1-n / sum(1-n), 4)
+  prob <- round((1-n) / sum(1-n), 4)
   prob
 })
 rownames(probas) <- annot$population
