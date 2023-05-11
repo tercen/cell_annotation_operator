@@ -3,10 +3,7 @@ suppressPackageStartupMessages({
   library(dplyr, warn.conflicts = FALSE)
   library(tidyr)
 })
-
-#options("tercen.workflowId" = "75cc2bda2d854b35362e4f45150136b9")
-#options("tercen.stepId"     = "5ae79b70-5195-4578-8439-eaf21b9a250b")
-
+tim::set_workflow_step_ids("https://tercen.com/tercen/w/edb0255192e5d97775927116121c468e/ds/b4077525-6aa4-4655-ba47-a58645cacd23")
 ctx = tercenCtx()
 
 if(length(ctx$rnames) != 1) stop("Only one row factor must be projected.")
@@ -15,88 +12,101 @@ pthres <- ctx$op.value('P-value threshold', as.double, 0.05)
 
 rvals <- ctx$rselect()[[1]]
 
-### cleaning marker names
-if(any(grepl("Comp|::", rvals))) {
-  rvals <- unlist(lapply(
-    strsplit(rvals, ":|,| "),
-    tail,
-    1
-  ))
-}
 ### Extract the population table with the documentId
-doc.id.tmp<-as_tibble(ctx$select())
-doc.id<-doc.id.tmp[[grep("documentId" , colnames(doc.id.tmp))]][1]
-
-annot_tbl<-ctx$client$tableSchemaService$select(doc.id) %>%
+annot <- ctx$client$tableSchemaService$select(
+  ctx$select(ctx$labels[[1]], nr = 1)[[1]]
+) %>%
   as_tibble()
 
-annot <- as.data.frame(annot_tbl)
 pos_list <- strsplit(gsub(" ", "", annot$pos_markers), "_")
 neg_list <- strsplit(gsub(" ", "", annot$neg_markers), "_")
 
+# marker specificity
+full_list <- lapply(seq_along(pos_list), function(x) c(pos_list[[x]], neg_list[[x]]))
+unique_markers <- unique(unlist(c(pos_list, neg_list)))
+ct <- sapply(unique_markers, function(m) {
+  ct_p <- sum(unlist(lapply(pos_list, function(x) m %in% x)))
+  ct_n <- sum(unlist(lapply(neg_list, function(x) m %in% x)))
+  c(ct_p, ct_n)
+})
+specs <- apply(ct, 1, function(x) {
+  1 - (x - min(x)) / (length(pos_list) - min(x))
+})
+
 rvals_in <- rvals[rvals %in% unlist(c(pos_list, neg_list))]
 
-if(length(rvals_in) == 0) warning("No markers found in the annotation. Please check the marker names.")
-msg <- paste0("The following markers have been found in the annotation: ", paste0(rvals_in, collapse = ", "))
-ctx$log(msg)
+if(length(rvals_in) == 0) {
+  stop("No markers found in the annotation. Please check the marker names.")
+}
+ctx$log(paste0(
+  "The following markers have been found in the annotation: ",
+  paste0(rvals_in, collapse = ", ")
+))
 
 ### Probabilities computation
 mat <- ctx$as.matrix()
 rownames(mat) <- rvals
 
-p_val <- apply(mat, 2, function(m) {
-  sum_z_pos <- unlist(lapply(pos_list, function (x) { sum(m[x], na.rm = TRUE) }))
-  sum_z_neg <- unlist(lapply(neg_list, function (x) { sum(-m[x], na.rm = TRUE) }))
-  sum_z <- sum_z_pos + sum_z_neg
-  sum_z[abs(sum_z) < 0] <- 0
-  pv <- 1-pnorm(sum_z, lower.tail = TRUE)
-  pv
-})
-rownames(p_val) <- annot$population
-colnames(p_val) <- as.character(1:ncol(p_val))
+mat[mat == -20] <- min(mat[mat > -20])
+mat[mat == 20] <- max(mat[mat < 20])
 
-probas <- apply(p_val, 2, function(n) {
-  prob <- round((1-n) / sum(1-n), 4)
+probs <- apply(mat, 2, function(m) {
+  sum_z_pos <- unlist(lapply(pos_list, function (x) { sum(m[x] * specs[x, 1] / sqrt(length(x)), na.rm = TRUE) }))
+  sum_z_neg <- unlist(lapply(neg_list, function (x) { sum(m[x] * specs[x, 2] / sqrt(length(x)), na.rm = TRUE) }))
+  sum_z <- sum_z_pos - sum_z_neg
+  sum_z[abs(sum_z) < 0] <- 0
+  pnorm(sum_z, lower.tail = FALSE, log.p = TRUE)
+})
+
+rownames(probs) <- annot$population
+colnames(probs) <- as.character(1:ncol(probs))
+
+p_values <- exp(probs)
+
+probas <- apply(-probs, 2, function(n) {
+  prob <- round(n / sum(n), 4)
   prob
 })
-rownames(probas) <- annot$population
-colnames(probas) <- as.character(1:ncol(probas))
 
-### Determination of the more likely population
-apply(t(p_val), 2, function(x) which.max(x))
-tpv<-t(p_val)
+## Output
+# 1 Probability table
+df_prob <- probas %>%
+  as_tibble(rownames = "population") %>%
+  tidyr::pivot_longer(cols = !matches("population"), names_to = ".ci", values_to = "probability") %>%
+  mutate(.ci = as.integer(.ci) - 1L)
 
-table_pv<-cbind(rownames(tpv),"Unknown")
-for (cluster in rownames(tpv)){
-  
-  res<-which( tpv[cluster,] == min(tpv[cluster,]))
-  if (min(tpv[cluster,])[1]<=pthres){
-    table_pv[[as.integer(cluster),2]]<-paste(colnames(tpv)[res], collapse = '_')
-  }
-}
-colnames(table_pv)<-c(".ci","max_population")
-
-####output
-pval_out <- p_val %>% 
-  as_tibble() %>%
-  mutate(population = rownames(p_val)) %>%
-  pivot_longer(names_to = ".ci", values_to = "pv", -population) %>%
+df_probs <- p_values %>%
+  as_tibble(rownames = "population") %>%
+  tidyr::pivot_longer(cols = !matches("population"), names_to = ".ci", values_to = "p_value") %>%
   mutate(.ci = as.integer(.ci) - 1L) %>%
+  merge(df_prob) %>% 
+  mutate(neglog_p_value = -log10(p_value))
+
+# 1 Cluster annotation table
+
+probable_pop <- df_probs %>% 
+  group_by(.ci, .drop = FALSE) %>%
+  filter(p_value < pthres) %>%
+  summarise(across(population, paste, collapse = ", ")) %>%
+  mutate(.ci = as.integer(.ci)) %>%
+  arrange(.ci) %>%
+  rename(probable_pop = population)
+
+df_clust_annot <- df_probs %>% 
+  group_by(.ci) %>%
+  filter(neglog_p_value == max(neglog_p_value)) %>%
+  arrange(.ci) %>%
+  rename(max_pop = population) %>%
+  ungroup() %>%
+  left_join(probable_pop, ".ci") %>%
+  mutate(probable_pop = if_else(probable_pop == "", "Unknown", probable_pop)) %>%
   ctx$addNamespace() 
+  
 
-prob_out <- probas %>%
-  as_tibble() %>%
-  mutate(population = rownames(probas)) %>%
-  pivot_longer(names_to = ".ci", values_to = "prob", -population) %>%
-  mutate(.ci = as.integer(.ci) - 1L) %>%
+### Return results to tercen
+df_probs_out <- df_probs %>%
+  rename(per_pop_pval = p_value, per_pop_pob = probability) %>%
+  select(-neglog_p_value) %>%
   ctx$addNamespace()
 
-tbl_pv_out <- table_pv %>%
-  as_tibble() %>%
-  mutate(.ci = as.integer(.ci) - 1L) %>%
-  ctx$addNamespace()
-
-df_out <- merge(prob_out,pval_out)
-
-ctx$save(list(df_out, tbl_pv_out))
-
+ctx$save(list(df_clust_annot, df_probs_out))
