@@ -4,6 +4,10 @@ suppressPackageStartupMessages({
   library(tidyr)
 })
 
+# http://127.0.0.1:5400/test/w/0d1335bc08a28da4ef5f89545f004c3d/ds/44c1b2c1-8b13-478a-bd98-a9ce43be196f
+# options("tercen.workflowId" = "0d1335bc08a28da4ef5f89545f004c3d")
+# options("tercen.stepId"     = "44c1b2c1-8b13-478a-bd98-a9ce43be196f")
+
 ctx = tercenCtx()
 
 if(length(ctx$rnames) != 1) stop("Only one row factor must be projected.")
@@ -71,42 +75,43 @@ probas <- apply(-probs, 2, function(n) {
 ## Output
 # 1 Probability table
 df_prob <- probas %>%
-  as_tibble(rownames = "population") %>%
-  tidyr::pivot_longer(cols = !matches("population"), names_to = ".ci", values_to = "probability") %>%
+  as_tibble(rownames = "pop.name") %>%
+  tidyr::pivot_longer(cols = !matches("pop.name"), names_to = ".ci", values_to = "best.pop.probability") %>%
   mutate(.ci = as.integer(.ci) - 1L)
 
 df_probs <- p_values %>%
-  as_tibble(rownames = "population") %>%
-  tidyr::pivot_longer(cols = !matches("population"), names_to = ".ci", values_to = "p_value") %>%
+  as_tibble(rownames = "pop.name") %>%
+  tidyr::pivot_longer(cols = !matches("pop.name"), names_to = ".ci", values_to = "best.pop.pvalue") %>%
   mutate(.ci = as.integer(.ci) - 1L) %>%
   merge(df_prob) %>% 
-  mutate(neglog_p_value = -log10(p_value))
+  mutate("best.pop.-log(pvalue)" = -log10(best.pop.pvalue))
 
 # 1 Cluster annotation table
 
 probable_pop <- df_probs %>% 
   group_by(.ci, .drop = FALSE) %>%
-  filter(p_value < pthres) %>%
-  summarise(across(population, paste, collapse = ", ")) %>%
+  filter(best.pop.pvalue < pthres) %>%
+  summarise(across(pop.name, paste, collapse = ", ")) %>%
   mutate(.ci = as.integer(.ci)) %>%
   arrange(.ci) %>%
-  rename(probable_pop = population)
+  rename(pop.list = pop.name)
 
 df_clust_annot <- df_probs %>% 
   group_by(.ci) %>%
-  filter(neglog_p_value == max(neglog_p_value)) %>%
+  # filter(neglog_p_value == max(neglog_p_value)) %>%
+  filter(`best.pop.-log(pvalue)` == max(`best.pop.-log(pvalue)`)) %>%
   arrange(.ci) %>%
-  rename(max_pop = population) %>%
+  rename(max_pop = pop.name) %>%
   ungroup() %>%
   left_join(probable_pop, ".ci") %>%
-  mutate(probable_pop = if_else(probable_pop == "", "Unknown", probable_pop)) %>%
+  mutate(probable_pop = if_else(pop.list == "", "Unknown", pop.list)) %>%
   ctx$addNamespace() 
   
 
 ### Return results to tercen
 df_probs_out <- df_probs %>%
-  rename(per_pop_pval = p_value, per_pop_pob = probability) %>%
-  select(-neglog_p_value) %>%
+  # rename(per_pop_pval = p_value, per_pop_pob = best.pop.probability) %>%
+  select(-`best.pop.-log(pvalue)`) %>%
   ctx$addNamespace()
 
 ctx$save(list(df_clust_annot, df_probs_out))
