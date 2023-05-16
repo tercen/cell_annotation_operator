@@ -101,13 +101,13 @@ df_clust_annot <- df_probs %>%
   # filter(neglog_p_value == max(neglog_p_value)) %>%
   filter(`best.pop.-log(pvalue)` == max(`best.pop.-log(pvalue)`)) %>%
   arrange(.ci) %>%
-  rename(max_pop = pop.name) %>%
+  # rename(max_pop = pop.name) %>%
   ungroup() %>%
   left_join(probable_pop, ".ci") %>%
-  mutate(probable_pop = if_else(pop.list == "", "Unknown", pop.list)) %>%
+  mutate(pop.list = if_else(pop.list == "", "Unknown", pop.list)) %>%
   ctx$addNamespace() 
   
-
+# browser()
 ### Return results to tercen
 df_probs_out <- df_probs %>%
   # rename(per_pop_pval = p_value, per_pop_pob = best.pop.probability) %>%
