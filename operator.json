@@ -1,16 +1,23 @@
 {
   "name": "Cell Annotation",
   "description": "Annotate cell populations based on a marker enrichment score computed for each cluster.",
-  "tags": ["flow cytometry", "annotation"],
-  "authors": ["tercen"],
-  "urls": ["https://github.com/tercen/cell_annotation_operator"],
-  "properties":  [
+  "tags": [
+    "flow cytometry",
+    "gating",
+    "annotation"
+  ],
+  "authors": [
+    "tercen"
+  ],
+  "urls": [
+    "https://github.com/tercen/cell_annotation_operator"
+  ],
+  "properties": [
     {
-    "kind": "DoubleProperty",
-    "name": "P-value threshold",
-    "defaultValue": 0.05,
-    "description": "P-value threshold"
-  }]
+      "kind": "DoubleProperty",
+      "name": "P-value threshold",
+      "defaultValue": 0.05,
+      "description": "P-value threshold"
+    }
+  ]
 }
-
-
