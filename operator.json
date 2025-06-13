@@ -1,10 +1,10 @@
 {
   "name": "Cell Annotation",
-  "description": "Annotates cell populations based on a marker enrichment score computed for each cluster.",
+  "description": "Annotates clusters based on marker enrichment scores using a reference table of marker vs. cell population correspondence.",
   "tags": [
     "flow cytometry",
-    "gating",
-    "annotation"
+    "cluster annotation",
+    "preprocessing"
   ],
   "authors": [
     "tercen"
@@ -19,5 +19,54 @@
       "defaultValue": 0.05,
       "description": "P-value threshold"
     }
-  ]
+  ],
+  "operatorSpec": {
+    "kind": "OperatorSpec",
+    "ontologyUri": "https://tercen.com/_ontology/tercen",
+    "ontologyVersion": "0.0.1",
+    "inputSpecs": [
+      {
+        "kind": "CrosstabSpec",
+        "metaFactors": [
+          {
+            "kind": "MetaFactor",
+            "name": "Marker",
+            "type": "",
+            "description": "Marker identifiers (channel, marker)",
+            "ontologyMapping": "variable",
+            "crosstabMapping": "row",
+            "cardinality": "1..n",
+            "factors": []
+          },
+          {
+            "kind": "MetaFactor",
+            "name": "Cluster",
+            "type": "",
+            "description": "Cluster identifiers",
+            "ontologyMapping": "group",
+            "crosstabMapping": "column",
+            "cardinality": "1..n",
+            "factors": []
+          }
+        ],
+        "axis": [
+          {
+            "kind": "AxisSpec",
+            "metaFactors": [
+              {
+                "kind": "MetaFactor",
+                "name": "Enrichment score",
+                "type": "numeric",
+                "description": "Enrichment score per marker and cluster",
+                "ontologyMapping": "measurement",
+                "crosstabMapping": "y",
+                "cardinality": "1",
+                "factors": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }
