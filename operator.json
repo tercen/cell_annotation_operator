@@ -35,7 +35,7 @@
             "description": "Marker identifiers (channel, marker)",
             "ontologyMapping": "variable",
             "crosstabMapping": "row",
-            "cardinality": "1..n",
+            "cardinality": "1",
             "factors": []
           },
           {
@@ -60,6 +60,16 @@
                 "description": "Enrichment score per marker and cluster",
                 "ontologyMapping": "measurement",
                 "crosstabMapping": "y",
+                "cardinality": "1",
+                "factors": []
+              },
+              {
+                "kind": "MetaFactor",
+                "name": "Annotation Table",
+                "type": "",
+                "description": "Reference table with marker-population correspondence (documentId)",
+                "ontologyMapping": "documentId",
+                "crosstabMapping": "label",
                 "cardinality": "1",
                 "factors": []
               }
