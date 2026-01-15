@@ -10,8 +10,9 @@ marker vs. cell population correpondence.
 Input projection|.
 ---|---
 `y-axis`        | numeric, enrichment score (from the marker_enrichment_operator)
-`row`           | factor, variable (channel, marker) 
+`row`           | factor, variable (channel, marker)
 `column`        | factor, group (cluster)
+`labels`        | factor, annotation table (documentId)
 
 Input parameters|.
 ---|---
