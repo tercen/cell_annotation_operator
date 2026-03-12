@@ -56,7 +56,7 @@
               {
                 "kind": "MetaFactor",
                 "name": "Enrichment score",
-                "type": "numeric",
+                "type": "double",
                 "description": "Enrichment score per marker and cluster",
                 "ontologyMapping": "measurement",
                 "crosstabMapping": "y",
